@@ -6,7 +6,7 @@ export const setAuthTokenInCookie = (
   accessToken: string
 ) => {
   const isProduction = process.env.NODE_ENV === "production";
-  const domain = isProduction ? ".chatters.social" : undefined;
+  const domain = isProduction ? ".whispe.me" : undefined;
 
   res.cookie("refreshToken", refreshToken, {
     domain,

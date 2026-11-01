@@ -1,0 +1,57 @@
+name: Deploy App
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    name: Build & Push Image to ECR
+    runs-on: ubuntu-latest
+    outputs:
+      image_uri: ${{ steps.meta.outputs.image_uri }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ECR_PUSH_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr-login
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push with GitHub Cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export image URI
+        id: meta
+        run: |
+          echo "image_uri=${{ steps.ecr-login.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+  deploy-dev:
+    needs: build
+    uses: ./.github/workflows/_deploy-ecs.yml
+    with:
+      environment_name: dev
+      image_uri: ${{ needs.build.outputs.image_uri }}
+
+  deploy-prod:
+    needs: [build, deploy-dev]
+    uses: ./.github/workflows/_deploy-ecs.yml
+    with:
+      environment_name: prod
+      image_uri: ${{ needs.build.outputs.image_uri }}

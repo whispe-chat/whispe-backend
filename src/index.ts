@@ -4,8 +4,12 @@ import { httpServer } from "./app";
 
 const PORT = process.env.PORT || 4000;
 
-connectToMongoDB();
+const start = async () => {
+  await connectToMongoDB();
 
-httpServer.listen(PORT, () => {
-  console.log(`Server started at port: ${PORT}`);
-});
+  httpServer.listen(PORT, () => {
+    console.log(`Server started at port: ${PORT}`);
+  });
+};
+
+start();

@@ -7,16 +7,9 @@ import { s3Config } from "../config/s3Config";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { AttachmentType } from "../model/Message";
 
-const isProduction = process.env.NODE_ENV === "production";
-
 const s3Client = new S3Client({
   region: s3Config.region,
-  credentials: isProduction
-    ? undefined
-    : {
-        accessKeyId: s3Config.accessKeyId,
-        secretAccessKey: s3Config.secretAccessKey,
-      },
+  credentials: undefined, // Use default credentials provider chain
 });
 
 export const generateUploadURL = async (key: string, contentType: string) => {
